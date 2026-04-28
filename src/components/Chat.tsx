@@ -58,9 +58,17 @@ export function Chat({ pet, wallet }: ChatProps) {
   const speak = useCallback((text: string) => {
     if (isMuted) return;
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // Clean text for clearer speech: remove asterisks, simplify addresses
+    const cleanText = text
+      .replace(/\*/g, '') // Remove all asterisks
+      .replace(/0x[a-fA-F0-9]{4,}/g, (match) => `địa chỉ ví ${match.slice(0, 4)}`) // Simplify hex addresses
+      .replace(/SUI/g, 'Sui')
+      .trim();
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = 'vi-VN';
-    utterance.rate = 1.1;
+    utterance.rate = 1.0;
     window.speechSynthesis.speak(utterance);
   }, [isMuted]);
 

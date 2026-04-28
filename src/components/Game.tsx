@@ -63,17 +63,17 @@ export function Game() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 h-screen flex flex-col overflow-hidden">
-      {/* Header */}
-      <header className="flex flex-col md:flex-row justify-between items-center gap-6 mb-8 bg-white p-6 rounded-[32px] shadow-2xl border border-black/5">
-        <div className="flex items-center gap-4">
-          <div className="bg-blue-600 p-3 rounded-2xl shadow-lg shadow-blue-200">
-            <Sparkles className="text-white w-6 h-6" />
+      {/* Header - Compact version */}
+      <header className="flex flex-col md:flex-row justify-between items-center gap-6 mb-6 bg-white p-5 rounded-[32px] shadow-2xl border border-black/5">
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="bg-blue-600 p-2.5 rounded-2xl shadow-lg shadow-blue-200">
+            <Sparkles className="text-white w-5 h-5" />
           </div>
           <div className="flex flex-col">
-            <h1 className="text-xl font-black tracking-tight text-black">SUI AI ASSISTANT</h1>
+            <h1 className="text-lg font-black tracking-tight text-black leading-tight">SUI AI</h1>
             <div className="flex items-center gap-2 opacity-40">
               <Activity className="w-3 h-3 text-emerald-500" />
-              <span className="text-[10px] uppercase font-bold tracking-widest">On-Chain Safe Checker</span>
+              <span className="text-[9px] uppercase font-bold tracking-widest leading-none">Safe Checker</span>
             </div>
           </div>
         </div>
@@ -85,13 +85,13 @@ export function Game() {
               type="text"
               value={inputAddress}
               onChange={(e) => setInputAddress(e.target.value)}
-              className="w-full bg-black/5 rounded-2xl px-12 py-3.5 text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all border border-transparent focus:border-blue-500/20"
+              className="w-full bg-black/5 rounded-2xl px-12 py-3 text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all border border-transparent focus:border-blue-500/20"
               placeholder="Nhập địa chỉ ví Sui..."
             />
           </div>
           <button 
             type="submit" 
-            className="px-6 py-3.5 bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 flex items-center gap-2"
+            className="px-5 py-3 bg-blue-600 text-white font-black text-[9px] uppercase tracking-widest rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 flex items-center gap-2"
           >
             {isRefreshing ? <RefreshCw className="animate-spin w-4 h-4" /> : <Search className="w-4 h-4" />}
             <span>KẾT NỐI</span>
@@ -100,88 +100,66 @@ export function Game() {
       </header>
 
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-0 overflow-hidden pb-4">
-        {/* Left Side: Pet & Info */}
-        <div className="lg:col-span-7 flex flex-col gap-6 overflow-hidden">
-          <div className="flex-1 min-h-0 relative bg-white rounded-[40px] border border-black/5 overflow-hidden shadow-inner flex items-center justify-center">
-             <PetDisplay pet={selectedPet} />
+        {/* Left Side: Wallet Dashboard (Minimalist) */}
+        <div className="lg:col-span-5 flex flex-col gap-6 overflow-hidden">
+          <div className="flex-1 min-h-0 relative bg-white rounded-[40px] border border-black/10 overflow-hidden shadow-sm flex flex-col items-center justify-center p-8 bg-gradient-to-br from-white to-blue-50/20">
+             {/* Background Decoration */}
+             <div className="absolute top-0 left-0 w-full h-1 bg-blue-600" />
+             <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
              
-             {/* Wallet Hud Overlay */}
-             <div className="absolute top-8 left-8 right-8 flex flex-wrap gap-3 pointer-events-none">
-                {wallet && Object.entries(wallet).filter(([k]) => !['dailyVolume', 'nfts'].includes(k)).map(([token, val]) => (
+             {/* Main Dashboard Stats */}
+             <div className="text-center z-10 space-y-6 w-full">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-2xl border border-blue-100 shadow-sm mb-4">
+                  <ShieldCheck className="w-4 h-4" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Safe Check Active</span>
+                </div>
+                
+                <div className="space-y-1">
+                  <h2 className="text-sm font-black text-black/30 uppercase tracking-[0.2em]">Active Balance</h2>
+                  <div className="text-6xl font-black tracking-tighter text-black flex items-baseline justify-center gap-2">
+                    {wallet?.SUI || '0.00'} 
+                    <span className="text-2xl opacity-20">SUI</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-8">
+                  <div className="bg-black/5 p-6 rounded-3xl border border-black/5 text-left">
+                    <span className="text-[9px] font-black opacity-30 uppercase block mb-1">Volume 24h</span>
+                    <span className="text-xl font-mono font-black text-blue-600">{wallet?.dailyVolume || '0.00'}</span>
+                    <span className="text-[9px] font-bold ml-1 opacity-40">SUI</span>
+                  </div>
+                  <div className="bg-black/5 p-6 rounded-3xl border border-black/5 text-left">
+                    <span className="text-[9px] font-black opacity-30 uppercase block mb-1">SuiFrens</span>
+                    <span className="text-xl font-mono font-black text-black">{wallet?.nfts.length || '0'}</span>
+                    <span className="text-[9px] font-bold ml-1 opacity-40">Assets</span>
+                  </div>
+                </div>
+             </div>
+             
+             {/* Wallet Hud Overlay - Moved to bottom items */}
+             <div className="absolute bottom-8 left-8 right-8 flex flex-wrap gap-2 justify-center">
+                {wallet && Object.entries(wallet).filter(([k]) => !['SUI', 'dailyVolume', 'nfts'].includes(k)).map(([token, val]) => (
                   <motion.div 
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
                     key={token} 
-                    className="bg-white/95 backdrop-blur px-4 py-2 rounded-2xl border border-black/5 shadow-xl flex items-center gap-3"
+                    className="bg-white px-3 py-2 rounded-xl border border-black/5 shadow-sm flex items-center gap-2"
                   >
-                    <div className="w-6 h-6 flex items-center justify-center bg-blue-50 rounded-lg">
-                      <span className="text-[10px] font-black text-blue-600">{token[0]}</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[8px] font-black opacity-30 leading-none">{token}</span>
-                      <span className="text-xs font-mono font-black text-black">{val}</span>
-                    </div>
+                    <span className="text-[9px] font-black text-blue-600">{token}</span>
+                    <span className="text-[10px] font-mono font-black text-black">{val}</span>
                   </motion.div>
                 ))}
              </div>
-
-             <div className="absolute bottom-10 left-10 right-10 flex flex-col items-center gap-4 pointer-events-none">
-                <div className="bg-black text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl flex items-center gap-3">
-                   <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-                   Volume 24h: {wallet?.dailyVolume || 0} SUI
-                </div>
-                {wallet?.nfts.length ? (
-                  <div className="bg-emerald-100 text-emerald-700 px-4 py-1.5 rounded-full text-[9px] font-bold uppercase border border-emerald-200">
-                    SuiFrens detected in wallet
-                  </div>
-                ) : null}
-             </div>
-          </div>
-          
-          <div className="grid grid-cols-3 gap-4">
-            <ActionButton 
-              onClick={() => handleAction('analyze')} 
-              label="Kiểm tra ví" 
-              icon={<Activity className="w-5 h-5" />} 
-              color="bg-blue-600" 
-            />
-            <ActionButton 
-              onClick={() => handleAction('report')} 
-              label="Báo cáo" 
-              icon={<Trophy className="w-5 h-5" />} 
-              color="bg-emerald-600" 
-            />
-            <ActionButton 
-              onClick={() => handleAction('security')} 
-              label="Bảo mật" 
-              icon={<ShieldCheck className="w-5 h-5" />} 
-              color="bg-rose-600" 
-            />
           </div>
         </div>
 
-        {/* Right Side: Chat */}
-        <div className="lg:col-span-5 flex flex-col gap-6 min-h-0">
-          <Chat pet={selectedPet} wallet={wallet} />
+        {/* Right Side: Chat (Expanded width) */}
+        <div className="lg:col-span-7 flex flex-col gap-6 min-h-0">
+          <div className="flex-1 bg-white rounded-[40px] shadow-2xl overflow-hidden border border-black/5">
+            <Chat pet={selectedPet} wallet={wallet} />
+          </div>
         </div>
       </main>
     </div>
-  );
-}
-
-function ActionButton({ onClick, label, icon, color }: { onClick: () => void, label: string, icon: any, color: string }) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "flex flex-col items-center justify-center gap-2 p-5 rounded-[24px] transition-all hover:-translate-y-1 active:scale-95 shadow-lg shadow-black/5 border border-white/20",
-        color, "text-white"
-      )}
-    >
-      <div className="bg-white/20 p-2 rounded-xl">
-        {icon}
-      </div>
-      <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
-    </button>
   );
 }
