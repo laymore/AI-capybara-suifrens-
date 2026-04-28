@@ -8,6 +8,7 @@ import { db } from '../lib/firebase';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, limit } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from '../lib/firestoreUtils';
 import { WalletInfo } from '../services/suiService';
+import { useFirebase } from '../context/FirebaseContext';
 
 interface ChatProps {
   pet: SuiFrenPet | null;
@@ -15,32 +16,44 @@ interface ChatProps {
 }
 
 export function Chat({ pet, wallet }: ChatProps) {
+  const { isAuthEnabled, user } = useFirebase();
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [history, setHistory] = useState<ChatMessage[]>([]);
   const [isMuted, setIsMuted] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Sync messages from Firestore...
+  // Sync messages from Firestore if auth is enabled
   useEffect(() => {
-    if (!pet?.id) return;
+    if (!pet?.id || !isAuthEnabled) return;
+    
     const messagesPath = `pets/${pet.id}/messages`;
     const q = query(collection(db, messagesPath), orderBy('timestamp', 'asc'), limit(50));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const messages = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          role: data.role,
-          text: data.text,
-          timestamp: data.timestamp?.toMillis() || Date.now()
-        } as ChatMessage;
+    
+    try {
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const messages = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            role: data.role,
+            text: data.text,
+            timestamp: data.timestamp?.toMillis() || Date.now()
+          } as ChatMessage;
+        });
+        setHistory(messages);
+      }, (error) => {
+        // Fallback for permission errors
+        if (error.code === 'permission-denied') {
+          console.warn("Firestore access denied. Using local state.");
+        } else {
+          handleFirestoreError(error, OperationType.LIST, messagesPath);
+        }
       });
-      setHistory(messages);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, messagesPath);
-    });
-    return unsubscribe;
-  }, [pet?.id]);
+      return unsubscribe;
+    } catch (e) {
+      console.warn("Firestore restricted. Local mode active.");
+    }
+  }, [pet?.id, isAuthEnabled]);
 
   const speak = useCallback((text: string) => {
     if (isMuted) return;
@@ -52,7 +65,13 @@ export function Chat({ pet, wallet }: ChatProps) {
   }, [isMuted]);
 
   const saveMessage = async (msg: Omit<ChatMessage, 'timestamp'>) => {
-    if (!pet?.id) return;
+    const fullMsg: ChatMessage = { ...msg, timestamp: Date.now() };
+    
+    // Always update local state immediately for responsiveness
+    setHistory(prev => [...prev, fullMsg]);
+
+    if (!pet?.id || !isAuthEnabled || !user) return;
+    
     const messagesPath = `pets/${pet.id}/messages`;
     try {
       await addDoc(collection(db, messagesPath), {
@@ -60,7 +79,7 @@ export function Chat({ pet, wallet }: ChatProps) {
         timestamp: serverTimestamp()
       });
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, messagesPath);
+      console.warn("Failed to sync message to cloud:", error);
     }
   };
 

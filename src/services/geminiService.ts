@@ -4,7 +4,7 @@ import { SuiFrenPet, ChatMessage } from "../types";
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export async function getPetResponse(pet: SuiFrenPet, history: ChatMessage[], userInput: string, walletData?: any) {
-  const model = "gemini-1.5-flash"; // Using 1.5 flash for better reasoning
+  const model = "gemini-3-flash-preview"; 
   
   let walletContext = "";
   if (walletData) {

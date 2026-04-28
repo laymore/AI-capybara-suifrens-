@@ -5,13 +5,15 @@ import { auth } from '../lib/firebase';
 interface FirebaseContextType {
   user: User | null;
   loading: boolean;
+  isAuthEnabled: boolean;
 }
 
-const FirebaseContext = createContext<FirebaseContextType>({ user: null, loading: true });
+const FirebaseContext = createContext<FirebaseContextType>({ user: null, loading: true, isAuthEnabled: true });
 
 export function FirebaseProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthEnabled, setIsAuthEnabled] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
@@ -22,8 +24,10 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     // Auto sign-in anonymously for this demo if no user
     if (!auth.currentUser) {
       signInAnonymously(auth).catch(err => {
-        if (err.code === 'auth/admin-restricted-operation') {
-          console.error("Firebase Anonymous Auth is disabled. Please enable it in the Firebase Console (Authentication > Sign-in method).");
+        setLoading(false); // Stop loading even if auth fails to allow guest mode
+        if (err.code === 'auth/admin-restricted-operation' || err.code === 'auth/operation-not-allowed') {
+          console.warn("Firebase Anonymous Auth is disabled. Continuing in Guest mode (Limited history features).");
+          setIsAuthEnabled(false);
         } else {
           console.error("Anonymous Sign-in failed:", err);
         }
@@ -34,7 +38,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <FirebaseContext.Provider value={{ user, loading }}>
+    <FirebaseContext.Provider value={{ user, loading, isAuthEnabled }}>
       {children}
     </FirebaseContext.Provider>
   );
