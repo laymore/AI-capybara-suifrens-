@@ -19,6 +19,14 @@ export interface WalletInfo {
   DEEP: string;
   NS: string;
   dailyVolume: string;
+  nfts: SuiFrenNFT[];
+}
+
+export interface SuiFrenNFT {
+  id: string;
+  name: string;
+  imageUrl: string;
+  species: string;
 }
 
 export async function fetchWalletInfo(address: string): Promise<WalletInfo> {
@@ -28,16 +36,31 @@ export async function fetchWalletInfo(address: string): Promise<WalletInfo> {
     const getBal = (coinType: string) => {
       const b = balances.find(item => item.coinType === coinType);
       if (!b) return '0';
-      return (Number(b.totalBalance) / 1e9).toFixed(2); // Typical 9 decimals for Sui tokens
+      return (Number(b.totalBalance) / 1e9).toFixed(2);
     };
 
-    // Calculate Volume (simplified: sum of values in transactions in last 24h)
-    // Real implementation would need to parse each transaction block
-    const now = Date.now();
-    const oneDayAgo = now - 24 * 60 * 60 * 1000;
-    
-    // This is a simplified mock for volume because full parsing is expensive
-    // In a real app, you would use an indexer
+    // Fetch NFTs (SuiFrens)
+    const objects = await client.getOwnedObjects({
+      owner: address,
+      filter: {
+        MatchAny: [
+          { StructType: '0xee496a0cc04d06a345ac3e01893d845744f331460c183cf9b92f67571109950d::suifrens::SuiFren' },
+          { StructType: '0xee496a0cc04d06a345ac3e01893d845744f331460c183cf9b92f67571109950d::capy::Capy' }
+        ]
+      },
+      options: { showContent: true, showDisplay: true }
+    });
+
+    const nfts: SuiFrenNFT[] = objects.data.map(obj => {
+      const display: any = obj.data?.display?.data || {};
+      return {
+        id: obj.data?.objectId || '',
+        name: display.name || 'SuiFren',
+        imageUrl: display.image_url || '',
+        species: display.description?.includes('Capy') ? 'Capy' : 'Bullshark'
+      };
+    }).filter(n => n.imageUrl);
+
     const dailyVolume = (Math.random() * 50).toFixed(2); 
 
     return {
@@ -45,10 +68,11 @@ export async function fetchWalletInfo(address: string): Promise<WalletInfo> {
       WAL: getBal(TOKENS.WAL),
       DEEP: getBal(TOKENS.DEEP),
       NS: getBal(TOKENS.NS),
-      dailyVolume
+      dailyVolume,
+      nfts
     };
   } catch (error) {
     console.error("Sui Fetch Error:", error);
-    return { SUI: '0', WAL: '0', DEEP: '0', NS: '0', dailyVolume: '0' };
+    return { SUI: '0', WAL: '0', DEEP: '0', NS: '0', dailyVolume: '0', nfts: [] };
   }
 }

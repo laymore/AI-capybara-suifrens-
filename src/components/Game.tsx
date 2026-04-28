@@ -1,11 +1,11 @@
-import { useCurrentAccount, ConnectButton } from '@mysten/dapp-kit';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import { SuiFrenPet } from '../types';
-import { MOCK_PETS, DEFAULT_SUI_ADDRESS } from '../constants';
+import { MOCK_PETS, DEFAULT_SUI_ADDRESS, DEFAULT_CAPY_IMAGE } from '../constants';
 import { PetDisplay } from './PetDisplay';
 import { Chat } from './Chat';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Trophy, Heart, Loader2, Wallet, Activity, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Sparkles, Trophy, Heart, Loader2, Wallet, Activity, ShieldCheck, RefreshCw, Search } from 'lucide-react';
 import { db, auth } from '../lib/firebase';
 import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from '../lib/firestoreUtils';
@@ -13,9 +13,8 @@ import { fetchWalletInfo, WalletInfo } from '../services/suiService';
 import { cn } from '../lib/utils';
 
 export function Game() {
-  const account = useCurrentAccount();
-  const activeAddress = useMemo(() => account?.address || DEFAULT_SUI_ADDRESS, [account]);
-  const isDefaultWallet = activeAddress === DEFAULT_SUI_ADDRESS && !account;
+  const [inputAddress, setInputAddress] = useState(DEFAULT_SUI_ADDRESS);
+  const [activeAddress, setActiveAddress] = useState(DEFAULT_SUI_ADDRESS);
 
   const [selectedPet, setSelectedPet] = useState<SuiFrenPet | null>(MOCK_PETS[0]);
   const [wallet, setWallet] = useState<WalletInfo | null>(null);
@@ -25,71 +24,79 @@ export function Game() {
     setIsRefreshing(true);
     const data = await fetchWalletInfo(activeAddress);
     setWallet(data);
+    
+    // Update AI Image based on NFTs found
+    if (data.nfts.length > 0) {
+      const randomNFT = data.nfts[Math.floor(Math.random() * data.nfts.length)];
+      setSelectedPet({
+        id: randomNFT.id,
+        name: randomNFT.name,
+        species: randomNFT.species,
+        personality: "Hỗ trợ nhiệt tình",
+        imageUrl: randomNFT.imageUrl,
+        stats: { hunger: 100, happiness: 100, energy: 100, level: 1, exp: 0 }
+      });
+    } else {
+      setSelectedPet({
+        ...MOCK_PETS[0],
+        imageUrl: DEFAULT_CAPY_IMAGE
+      });
+    }
     setIsRefreshing(false);
   }, [activeAddress]);
 
   useEffect(() => {
     refreshWallet();
-    const interval = setInterval(refreshWallet, 30000); // 30s refresh
-    return () => clearInterval(interval);
-  }, [refreshWallet]);
-
-  // Sync pet info from Firestore
-  useEffect(() => {
-    if (!selectedPet?.id) return;
-    const statsPath = `pets/${selectedPet.id}/stats/current`;
-    const unsubscribe = onSnapshot(doc(db, statsPath), (docSnap) => {
-      if (docSnap.exists()) {
-        const remoteStats = docSnap.data();
-        setSelectedPet(prev => {
-          if (!prev || prev.id !== selectedPet.id) return prev;
-          return {
-            ...prev,
-            stats: remoteStats as any
-          };
-        });
-      }
-    }, (error) => {
-      handleFirestoreError(error, OperationType.GET, statsPath);
-    });
-    return unsubscribe;
-  }, [selectedPet?.id]);
+  }, [activeAddress, refreshWallet]);
 
   const handleAction = async (type: 'analyze' | 'report' | 'security') => {
     if (!wallet) return;
     window.dispatchEvent(new CustomEvent('pet-action', { detail: { type, wallet } }));
   };
 
+  const handleAddressUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputAddress.startsWith('0x')) {
+      setActiveAddress(inputAddress);
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 h-screen flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="flex justify-between items-center mb-8 bg-white p-4 rounded-3xl shadow-xl border border-black/5">
-        <div className="flex items-center gap-3">
-          <div className="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-200">
+      <header className="flex flex-col md:flex-row justify-between items-center gap-6 mb-8 bg-white p-6 rounded-[32px] shadow-2xl border border-black/5">
+        <div className="flex items-center gap-4">
+          <div className="bg-blue-600 p-3 rounded-2xl shadow-lg shadow-blue-200">
             <Sparkles className="text-white w-6 h-6" />
           </div>
           <div className="flex flex-col">
-            <h1 className="text-xl font-black tracking-tight text-black">SUI ASSISTANT</h1>
-            <div className="flex items-center gap-1.5 opacity-50">
-              <Wallet className="w-3 h-3" />
-              <span className="text-[10px] font-mono truncate max-w-[150px] md:max-w-none">
-                {activeAddress}
-              </span>
-              {isDefaultWallet && (
-                <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[8px] font-bold rounded-md uppercase">Default</span>
-              )}
+            <h1 className="text-xl font-black tracking-tight text-black">SUI AI ASSISTANT</h1>
+            <div className="flex items-center gap-2 opacity-40">
+              <Activity className="w-3 h-3 text-emerald-500" />
+              <span className="text-[10px] uppercase font-bold tracking-widest">On-Chain Safe Checker</span>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        
+        <form onSubmit={handleAddressUpdate} className="flex-1 max-w-xl w-full flex gap-2">
+          <div className="relative flex-1">
+            <Wallet className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-black/20" />
+            <input 
+              type="text"
+              value={inputAddress}
+              onChange={(e) => setInputAddress(e.target.value)}
+              className="w-full bg-black/5 rounded-2xl px-12 py-3.5 text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all border border-transparent focus:border-blue-500/20"
+              placeholder="Nhập địa chỉ ví Sui..."
+            />
+          </div>
           <button 
-            onClick={refreshWallet}
-            className={`p-2 rounded-xl hover:bg-black/5 transition-all ${isRefreshing ? 'animate-spin opacity-40' : ''}`}
+            type="submit" 
+            className="px-6 py-3.5 bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 flex items-center gap-2"
           >
-            <RefreshCw className="w-5 h-5 text-black/40" />
+            {isRefreshing ? <RefreshCw className="animate-spin w-4 h-4" /> : <Search className="w-4 h-4" />}
+            <span>KẾT NỐI</span>
           </button>
-          <ConnectButton />
-        </div>
+        </form>
       </header>
 
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-0 overflow-hidden pb-4">
@@ -99,24 +106,35 @@ export function Game() {
              <PetDisplay pet={selectedPet} />
              
              {/* Wallet Hud Overlay */}
-             <div className="absolute top-6 left-6 right-6 flex flex-wrap gap-2 pointer-events-none">
-                {wallet && Object.entries(wallet).filter(([k]) => k !== 'dailyVolume').map(([token, val]) => (
+             <div className="absolute top-8 left-8 right-8 flex flex-wrap gap-3 pointer-events-none">
+                {wallet && Object.entries(wallet).filter(([k]) => !['dailyVolume', 'nfts'].includes(k)).map(([token, val]) => (
                   <motion.div 
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
                     key={token} 
-                    className="bg-white/95 backdrop-blur px-3 py-1.5 rounded-xl border border-black/5 shadow-sm flex items-center gap-2"
+                    className="bg-white/95 backdrop-blur px-4 py-2 rounded-2xl border border-black/5 shadow-xl flex items-center gap-3"
                   >
-                    <span className="text-[10px] font-black">{token}</span>
-                    <span className="text-sm font-mono font-bold text-blue-600">{val}</span>
+                    <div className="w-6 h-6 flex items-center justify-center bg-blue-50 rounded-lg">
+                      <span className="text-[10px] font-black text-blue-600">{token[0]}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[8px] font-black opacity-30 leading-none">{token}</span>
+                      <span className="text-xs font-mono font-black text-black">{val}</span>
+                    </div>
                   </motion.div>
                 ))}
              </div>
 
-             <div className="absolute bottom-6 left-6 right-6 flex items-center justify-center pointer-events-none">
-                <div className="bg-black text-white px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl">
+             <div className="absolute bottom-10 left-10 right-10 flex flex-col items-center gap-4 pointer-events-none">
+                <div className="bg-black text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl flex items-center gap-3">
+                   <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
                    Volume 24h: {wallet?.dailyVolume || 0} SUI
                 </div>
+                {wallet?.nfts.length ? (
+                  <div className="bg-emerald-100 text-emerald-700 px-4 py-1.5 rounded-full text-[9px] font-bold uppercase border border-emerald-200">
+                    SuiFrens detected in wallet
+                  </div>
+                ) : null}
              </div>
           </div>
           

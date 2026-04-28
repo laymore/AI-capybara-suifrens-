@@ -2,6 +2,8 @@ import { SuiFrenPet } from "./types";
 
 export const DEFAULT_SUI_ADDRESS = "0x0b134a287ec28c1032da9a9ee011ed248402f9abb3cc43ca4a0cd85b2c5bf423";
 
+export const DEFAULT_CAPY_IMAGE = "https://www.suifrens.com/assets/images/capy-logo.png"; // Official Suifrens Capy assets proxy or equivalent
+
 export const MOCK_PETS: SuiFrenPet[] = [
   {
     id: "mock-1",
