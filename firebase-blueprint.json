@@ -1,0 +1,56 @@
+{
+  "entities": {
+    "PetStats": {
+      "title": "Pet Stats",
+      "description": "Mutable statistics for a SuiFren pet",
+      "type": "object",
+      "properties": {
+        "hunger": { "type": "number", "description": "0-100 scale" },
+        "happiness": { "type": "number", "description": "0-100 scale" },
+        "energy": { "type": "number", "description": "0-100 scale" },
+        "level": { "type": "number", "description": "Pet level" },
+        "exp": { "type": "number", "description": "Experience points" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["hunger", "happiness", "energy", "level", "exp", "updatedAt"]
+    },
+    "PetProfile": {
+      "title": "Pet Profile",
+      "description": "Static and metadata for a pet linked to Sui NFT",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "description": "Sui wallet address" },
+        "name": { "type": "string" },
+        "species": { "type": "string" },
+        "personality": { "type": "string" },
+        "imageUrl": { "type": "string" }
+      },
+      "required": ["ownerId", "name", "species", "personality"]
+    },
+    "ChatMessage": {
+      "title": "Chat Message",
+      "description": "Conversation log between user and AI pet",
+      "type": "object",
+      "properties": {
+        "role": { "type": "string", "enum": ["user", "model"] },
+        "text": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["role", "text", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/pets/{petId}": {
+      "schema": "PetProfile",
+      "description": "Core pet metadata"
+    },
+    "/pets/{petId}/stats/current": {
+      "schema": "PetStats",
+      "description": "Real-time volatile stats"
+    },
+    "/pets/{petId}/messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "AI conversation logs"
+    }
+  }
+}

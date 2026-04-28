@@ -1,0 +1,105 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isMockPet(petId) {
+      return petId.matches('^mock-.*');
+    }
+
+    function isOwner(petId) {
+      return isMockPet(petId) || (isSignedIn() && (
+        get(/databases/$(database)/documents/pets/$(petId)).data.ownerId == request.auth.uid ||
+        request.resource.data.ownerId == request.auth.uid
+      ));
+    }
+
+    function isReadOnlyOwner(petId) {
+       return isMockPet(petId) || (isSignedIn() && (
+         get(/databases/$(database)/documents/pets/$(petId)).data.ownerId == request.auth.uid
+       ));
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidPet(data) {
+      return data.keys().hasAll(['ownerId', 'name', 'species', 'personality', 'imageUrl'])
+        && data.keys().size() == 5
+        && data.ownerId == request.auth.uid
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 64
+        && data.species is string
+        && data.personality is string && data.personality.size() <= 500
+        && data.imageUrl is string;
+    }
+
+    function isValidStats(data) {
+      return data.keys().hasAll(['hunger', 'happiness', 'energy', 'level', 'exp', 'updatedAt'])
+        && data.keys().size() == 6
+        && data.hunger is number && data.hunger >= 0 && data.hunger <= 100
+        && data.happiness is number && data.happiness >= 0 && data.happiness <= 100
+        && data.energy is number && data.energy >= 0 && data.energy <= 100
+        && data.level is number && data.level >= 1
+        && data.exp is number && data.exp >= 0 && data.exp < 100
+        && data.updatedAt == request.time;
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll(['role', 'text', 'timestamp'])
+        && data.keys().size() == 3
+        && data.role in ['user', 'model']
+        && data.text is string && data.text.size() > 0 && data.text.size() <= 1000
+        && data.timestamp == request.time;
+    }
+
+    // --- Routes ---
+
+    match /pets/{petId} {
+      allow get: if true; // Publicly readable for demo
+      allow list: if true;
+      
+      allow create: if isMockPet(petId) || (isSignedIn() && isValidId(petId) && isValidPet(incoming()));
+      
+      allow update: if isReadOnlyOwner(petId) && (isMockPet(petId) || incoming().ownerId == existing().ownerId);
+      
+      match /stats/current {
+        allow get: if true;
+        allow create: if isOwner(petId) && isValidStats(incoming());
+        allow update: if isOwner(petId) && isValidStats(incoming()) && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['hunger', 'happiness', 'energy', 'level', 'exp', 'updatedAt'])
+        );
+      }
+
+      match /messages/{messageId} {
+        allow list: if isReadOnlyOwner(petId);
+        allow create: if isOwner(petId) && isValidMessage(incoming());
+        allow update, delete: if false;
+      }
+    }
+    
+    // Special path for testing
+    match /test/connection {
+      allow get: if true;
+    }
+  }
+}
