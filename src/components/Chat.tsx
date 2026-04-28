@@ -130,7 +130,7 @@ export function Chat({ pet, wallet }: ChatProps) {
 
   return (
     <div className="flex-1 min-h-0 bg-white rounded-[32px] border border-black/5 shadow-xl flex flex-col overflow-hidden">
-      <div className="p-4 border-b border-black/5 flex justify-between items-center bg-blue-50/30">
+      <div className="p-4 border-b border-black/5 flex justify-between items-center bg-blue-50/30" style={{ height: '59.8px', width: '250px' }}>
         <div className="flex items-center gap-2">
            <Bot className="w-4 h-4 text-blue-600" />
            <span className="text-xs font-bold uppercase tracking-widest">{pet?.name} AI ACTIVE</span>

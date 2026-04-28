@@ -101,61 +101,59 @@ export function Game() {
 
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-0 overflow-hidden pb-4">
         {/* Left Side: Wallet Dashboard (Minimalist) */}
-        <div className="lg:col-span-5 flex flex-col gap-6 overflow-hidden">
-          <div className="flex-1 min-h-0 relative bg-white rounded-[40px] border border-black/10 overflow-hidden shadow-sm flex flex-col items-center justify-center p-8 bg-gradient-to-br from-white to-blue-50/20">
+        <div className="lg:col-span-4 flex flex-col gap-6 overflow-hidden">
+          <div 
+            className="relative bg-white rounded-[40px] border border-black/10 overflow-hidden shadow-sm flex flex-col items-center justify-center bg-gradient-to-br from-white to-blue-50/20"
+            style={{ 
+              height: '160px',
+              paddingTop: '0px',
+              paddingLeft: '31px',
+              paddingRight: '34px',
+              paddingBottom: '34px',
+              marginLeft: '0px',
+              marginRight: '0px'
+            }}
+          >
              {/* Background Decoration */}
              <div className="absolute top-0 left-0 w-full h-1 bg-blue-600" />
              <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
              
              {/* Main Dashboard Stats */}
-             <div className="text-center z-10 space-y-6 w-full">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-2xl border border-blue-100 shadow-sm mb-4">
-                  <ShieldCheck className="w-4 h-4" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Safe Check Active</span>
+             <div className="text-center z-10 space-y-3 w-full">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-xl border border-blue-100 shadow-sm">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span className="text-[9px] font-black uppercase tracking-widest">Safe Check Active</span>
                 </div>
                 
-                <div className="space-y-1">
-                  <h2 className="text-sm font-black text-black/30 uppercase tracking-[0.2em]">Active Balance</h2>
-                  <div className="text-6xl font-black tracking-tighter text-black flex items-baseline justify-center gap-2">
+                <div className="space-y-0.5">
+                  <h2 className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em]">Active Balance</h2>
+                  <div className="text-4xl font-black tracking-tighter text-black flex items-baseline justify-center gap-2">
                     {wallet?.SUI || '0.00'} 
-                    <span className="text-2xl opacity-20">SUI</span>
+                    <span className="text-lg opacity-20">SUI</span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mt-8">
-                  <div className="bg-black/5 p-6 rounded-3xl border border-black/5 text-left">
-                    <span className="text-[9px] font-black opacity-30 uppercase block mb-1">Volume 24h</span>
-                    <span className="text-xl font-mono font-black text-blue-600">{wallet?.dailyVolume || '0.00'}</span>
-                    <span className="text-[9px] font-bold ml-1 opacity-40">SUI</span>
-                  </div>
-                  <div className="bg-black/5 p-6 rounded-3xl border border-black/5 text-left">
-                    <span className="text-[9px] font-black opacity-30 uppercase block mb-1">SuiFrens</span>
-                    <span className="text-xl font-mono font-black text-black">{wallet?.nfts.length || '0'}</span>
-                    <span className="text-[9px] font-bold ml-1 opacity-40">Assets</span>
+                <div className="mt-4">
+                  <div 
+                    className="bg-black/5 p-4 rounded-2xl border border-black/5 text-left transition-all hover:bg-black/10 cursor-pointer group flex justify-between items-center" 
+                    onClick={() => handleAction('analyze')}
+                    style={{ height: '54px' }}
+                  >
+                    <div>
+                      <span className="text-[8px] font-black opacity-30 uppercase block leading-none">Volume 24h</span>
+                      <span className="text-lg font-mono font-black text-blue-600">{wallet?.dailyVolume || '0.00'}</span>
+                      <span className="text-[8px] font-bold ml-1 opacity-40">SUI</span>
+                    </div>
+                    <Activity className="w-4 h-4 text-blue-600 opacity-40 group-hover:opacity-100 transition-opacity" />
                   </div>
                 </div>
-             </div>
-             
-             {/* Wallet Hud Overlay - Moved to bottom items */}
-             <div className="absolute bottom-8 left-8 right-8 flex flex-wrap gap-2 justify-center">
-                {wallet && Object.entries(wallet).filter(([k]) => !['SUI', 'dailyVolume', 'nfts'].includes(k)).map(([token, val]) => (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    key={token} 
-                    className="bg-white px-3 py-2 rounded-xl border border-black/5 shadow-sm flex items-center gap-2"
-                  >
-                    <span className="text-[9px] font-black text-blue-600">{token}</span>
-                    <span className="text-[10px] font-mono font-black text-black">{val}</span>
-                  </motion.div>
-                ))}
              </div>
           </div>
         </div>
 
-        {/* Right Side: Chat (Expanded width) */}
-        <div className="lg:col-span-7 flex flex-col gap-6 min-h-0">
-          <div className="flex-1 bg-white rounded-[40px] shadow-2xl overflow-hidden border border-black/5">
+        {/* Right Side: Chat (Larger width) */}
+        <div className="lg:col-span-8 flex flex-col gap-6 min-h-0">
+          <div className="flex-1 bg-white rounded-[40px] shadow-2xl overflow-hidden border border-black/5 flex flex-col">
             <Chat pet={selectedPet} wallet={wallet} />
           </div>
         </div>
